@@ -2,8 +2,11 @@
 #include "../include/libFS2025.h"
 #include "../include/editor.h"
 
+
 #define INPUT_BUF_SIZE 64
 #define FILE_DATA_BUF_SIZE 2048
+
+#define EDITOR_USE_MSG "The file editor allows you to write text to file.\nQuit Without Saving:\t'ctrl+q'\nSave and Quit:\t'ctrl+x'\n\nPress enter key to enter the editor or any other key to return to menu\n"
 
 char *get_input(char *buffer, size_t size) {
     if (fgets(buffer, size, stdin) == NULL) {
@@ -56,7 +59,6 @@ void handleCreate() {
 }
 
 void handleOpen() {
-
 }
 
 void handleWrite() {
@@ -66,22 +68,13 @@ void handleWrite() {
     if(!get_input(file_name, INPUT_BUF_SIZE))
         return;
 
-    editFile(file_name);
+    // Display editor instructions
+    printf(EDITOR_USE_MSG);
+    int key = getchar();
 
-
-    //int fd = fileOpen(file_name);
-    /*
-    if(fd == LIBFS_ERR)
-        return;
-
-    printf("Write data to file:\n");
-    char write_data[FILE_DATA_BUF_SIZE];
-    
-    if(!get_input(write_data, FILE_DATA_BUF_SIZE))
-        return;
-
-    fileWrite(fd, write_data);
-    fileClose(fd); */
+    // Enter editor if use presses enter key
+    if(key == '\n')
+        editFile(file_name);
 }
 
 void handleRead() {
@@ -98,9 +91,14 @@ void handleRead() {
         return;
     
     char file_data[FILE_DATA_BUF_SIZE]; // Data from file
-    
+
     // Read file data
     size_t file_size = fileRead(fd, file_data, FILE_DATA_BUF_SIZE);
+
+    if(file_size == LIBFS_ERR) // Check for file read error
+        return;
+
+    file_data[file_size] = '\0';
 
     if(file_size > 0) // Print file content
         printf("File Content:\n\n%s", file_data);
