@@ -130,7 +130,6 @@ void clear_screen() {
 
 void draw_screen() {
     // Clear screen & move cursor to top-left
-    //write(STDOUT_FILENO, "\x1b[2J\x1b[H", 7);
     write(STDOUT_FILENO, "\x1b[3J\x1b[H\x1b[2J", 10);
 
     write(STDOUT_FILENO, "\x1b[?25l", 6); // Hide cursor
@@ -179,16 +178,9 @@ int read_key() {
 
 
 void handle_ctrl_x() {
-    disableRawMode(); 
-    printf("ctrl+x pressed\n"); // DEBUG *******
-    fflush(stdout);
-
+    // Get text and save file
     char *text = get_full_text();
     saveFile(text);
-
-    //disableRawMode();  // temporarily restore terminal
-    printf("\nCollected text (%zu bytes):\n", strlen(text));
-    printf("---- BEGIN ----\n%s---- END ----\n", text);
 
     free(text);
     exit_editor = 1;
@@ -196,14 +188,14 @@ void handle_ctrl_x() {
 
 
 void process_key(int k) {
-    switch (k) {
-        case 'q': exit(0); // quit
-
+    switch (k) { // Handle all key presses
+        // Navigation keys
         case 'L': if (cx > 0) cx--; break;
         case 'R': cx++; break;
         case 'U': if (cy > 0) cy--; break;
         case 'D': if (cy < line_count - 1) cy++; break;
-        case '\r': {  // ENTER
+        
+        case '\r': {  // Enter key for newline
             char *line = lines[cy];
             int len = strlen(line);
 
@@ -228,19 +220,21 @@ void process_key(int k) {
             break;
         }
 
-        case 24:  // CTRL-X
+        case 17: exit_editor = 1; // ctrl+q to quit without saving
+
+        case 24:  // ctrl+x to save and quit
             handle_ctrl_x();
             break;
 
-        case 127: // Backspace
-            if (cx > 0) {
+        case 127: // Backspace key to delete char
+            if(cx > 0) {
                 delete_char(cy, cx);
                 cx--;
             }
             break;
 
-        default:
-            if (k >= 32 && k <= 126) {
+        default: // Insert character if non-special key
+            if(k >= 32 && k <= 126) {
                 insert_char(cy, cx, k);
                 cx++;
             }
@@ -282,14 +276,16 @@ int editFile(char* editFilename) {
     lines[0] = strdup("");
     line_count = 1;
 
+
     while (!exit_editor) {
         draw_screen();
         int key = read_key();
-        if (key == 'q') break;
         process_key(key);
     }
 
+    // Ensure graceful exit
     disableRawMode();
     write(STDOUT_FILENO, "\x1b[2J\x1b[H", 7); // clear screen on exit
+    
     return 0;
 }

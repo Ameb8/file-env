@@ -24,13 +24,11 @@ char *get_input(char *buffer, size_t size) {
 void displayMenu() {
     printf("\n--- Menu ---\n");
     printf("1. Create a file\n");
-    printf("2. Open a file\n");
-    printf("3. Write to a file\n");
-    printf("4. Read from a file\n");
-    printf("5. List files\n");
-    printf("6. Close a file\n");
-    printf("7. Delete a file\n");
-    printf("8. Exit\n");
+    printf("2. Write to a file\n");
+    printf("3. Read from a file\n");
+    printf("4. List files\n");
+    printf("5. Delete a file\n");
+    printf("6. Exit\n");
     printf("Enter your choice: ");
 }
 
@@ -126,7 +124,14 @@ void handleClose() {
 }
 
 void handleDelete() {
+    // Prompt user to enter filename to delete
+    char file_name[INPUT_BUF_SIZE];
+    printf("Enter the name of the file you would like to delete: ");
 
+    if(!get_input(file_name, INPUT_BUF_SIZE)) // Get filename to read
+        return;
+
+    fileDelete(file_name); // Delete file
 }
 
 
@@ -138,7 +143,7 @@ void handleExit() {
 int main() {
     int choice;
 
-    while (1) {
+    while(1) {
         displayMenu();
         scanf("%d", &choice);  // Get user choice
         getchar();
@@ -148,24 +153,18 @@ int main() {
                 handleCreate();
                 break;
             case 2:
-                handleOpen();
-                break;
-            case 3:
                 handleWrite();
                 break;
-            case 4:
+            case 3:
                 handleRead();
                 break;
-            case 5:
+            case 4:
                 handleList();
                 break;
-            case 6:
-                handleClose();
-                break;
-            case 7:
+            case 5:
                 handleDelete();
                 break;
-            case 8:
+            case 6:
                 exit(0);
                 break;
         }
