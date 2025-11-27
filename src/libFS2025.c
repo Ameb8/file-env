@@ -5,6 +5,10 @@
 #include "libFS2025.h"
 
 
+// File store directory config
+#define LIBFS_BASE_DIR ".fsdata/" // Path from project root to where files are saved
+
+
 // Invalid file provided by user
 #define ERR_MSG_FNE "Error: File '%s' does not exists.\n" 
 #define ERR_MSG_FAE "Error: File '%s' already exists.\n"
@@ -27,6 +31,11 @@ FileEntry file_table[MAX_FILES] = {0}; // File table to track files where index 
 int file_count = 0; // Number of files in the system
 int file_end = 0; // Tracks highest used virtual descriptor for file storage 
 Queue free_mem = { NULL, 0 }; // Holds open indices in table less than file count
+
+
+static void buildFullPath(char *out, const char *filename) {
+    snprintf(out, MAX_FILENAME + 20, "%s%s", LIBFS_BASE_DIR, filename);
+}
 
 
 // Returns index of file if in memory
@@ -54,8 +63,12 @@ int fileCreate(const char *filename) {
     else // Increment end of contiguously stored files
         file_end++;
 
+    // Get full path to local file
+    char fullpath[MAX_FILENAME + 20];
+    buildFullPath(fullpath, filename);
+
     // Create the file on the local disk
-    FILE *file = fopen(filename, "w");
+    FILE *file = fopen(fullpath, "w");
     if (!file) {
         printf(ERR_MSG_CNC, filename);
         return -1;
@@ -111,8 +124,12 @@ int fileWrite(int file_index, const char *data) {
 
     int data_size = strlen(data);
 
+    // Get full path to local file
+    char fullpath[MAX_FILENAME + 20];
+    buildFullPath(fullpath, file_table[file_index].filename);
+
     // Open local file to write data
-    FILE *file = fopen(file_table[file_index].filename, "w");
+    FILE *file = fopen(fullpath, "w");
 
     if (!file) { // Error opening file
         printf("Error: Unable to open file '%s' for writing.\n", file_table[file_index].filename);
@@ -134,9 +151,18 @@ int fileRead(int file_index, char *buffer, int buffer_size) {
         printf("Error: File '%s' is not open.\n", file_table[file_index].filename);
         return LIBFS_ERR;
     }
+
+    if(file_table[file_index].size < 1) {
+        printf("File '%s' is empty, no data to read\n", file_table[file_index].filename);
+        return 0;
+    }
  
+    // Get full path to local file
+    char fullpath[MAX_FILENAME + 20];
+    buildFullPath(fullpath, file_table[file_index].filename);
+
     // Attempt to open file
-    FILE* file = fopen(file_table[file_index].filename, "r");
+    FILE* file = fopen(fullpath, "r");
 
     if(!file) { // File failed to open
         printf("Error: Unable to open file '%s' for writing.\n", file_table[file_index].filename);
@@ -155,7 +181,7 @@ int fileRead(int file_index, char *buffer, int buffer_size) {
     if(bytes_read > 0) {
         printf("%zu bytes of data read from file '%s' successfully.\n", bytes_read, file_table[file_index].filename);
     } else { 
-        printf("Failed to read data from file |%s|\n", file_table[file_index].filename);
+        printf("Failed to read data from file %s\n", file_table[file_index].filename);
         return LIBFS_ERR;
     }
 
@@ -193,8 +219,12 @@ int fileDelete(const char *filename) {
         return LIBFS_ERR;
     }
 
+    // Get full path to local file
+    char fullpath[MAX_FILENAME + 20];
+    buildFullPath(fullpath, filename);
+
     // Delete file from system
-    if(unlink(file_table[delete_idx].filename)) {
+    if(unlink(fullpath)) {
         printf(ERR_MSG_CND, file_table[delete_idx].filename);
         return LIBFS_ERR;
     }
