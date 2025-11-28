@@ -12,6 +12,7 @@
 #define MAX_FILE_SIZE 1024
 #define LIBFS_ERR -1
 
+
 // File system structures
 typedef struct {
     char filename[MAX_FILENAME];
@@ -19,7 +20,6 @@ typedef struct {
     int is_open;
     char exists;
 } FileEntry;
-
 
 
 // Function prototypes
@@ -30,5 +30,7 @@ int fileRead(int file_index, char *buffer, int buffer_size);
 int fileClose(int file_index);
 int fileDelete(const char *filename);
 FileEntry** fileList(size_t* num_files);
+int libFSLoad();
+
 
 #endif // LIBFS2025_H

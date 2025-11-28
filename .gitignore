@@ -1,3 +1,6 @@
 build/ 
 .vscode/ 
 
+# Exclude user-created files from repo
+.fsdata/*
+!.fsdata/.gitkeep

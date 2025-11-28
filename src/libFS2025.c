@@ -1,4 +1,6 @@
 #include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include "../include/queue.h"
 
@@ -241,6 +243,7 @@ int fileDelete(const char *filename) {
     return 0;
 }
 
+
 FileEntry** fileList(size_t* num_files) {
     FileEntry** files = malloc(file_count * sizeof(FileEntry*));
     *num_files=0;
@@ -251,4 +254,58 @@ FileEntry** fileList(size_t* num_files) {
     }
 
     return files;
+}
+
+
+int libFSLoad() {
+    DIR *dir = opendir(LIBFS_BASE_DIR);
+    if (!dir) {
+        perror("Error opening FS base directory");
+        return LIBFS_ERR;
+    }
+
+    struct dirent *entry;
+    int files_read = 0;
+
+    while((entry = readdir(dir)) != NULL) { // Iterate files in directory
+        // Skip files '.', '..', and '.gitkeep'
+        if (strcmp(entry->d_name, ".") == 0 ||
+            strcmp(entry->d_name, "..") == 0 ||
+            strcmp(entry->d_name, ".gitkeep") == 0)
+            continue;
+
+        // Get fullpath to file
+        char fullpath[MAX_FILENAME + 20];
+        buildFullPath(fullpath, entry->d_name);
+
+        struct stat st;
+        if(stat(fullpath, &st) != 0) // Skip if stat() fails
+            continue; 
+
+        if(!S_ISREG(st.st_mode)) // Skip irregular files (dirs, symlinks)
+            continue;
+
+        if(file_count >= MAX_FILES) // Stop if no space to load
+            break;
+
+        files_read++; // File will be loaded, increment count
+
+        // Determine virtual memory location for file
+        int mem_idx;
+        if(queueSize(&free_mem)) // Use open slot within used virtual memory
+            mem_idx = dequeue(&free_mem);
+        else // No fragmentation, store at end of virtual memory
+            mem_idx = file_end++;
+
+        // Populate table entry
+        strcpy(file_table[mem_idx].filename, entry->d_name);
+        file_table[mem_idx].size = st.st_size;
+        file_table[mem_idx].is_open = 0;
+        file_table[mem_idx].exists = 1;
+
+        file_count++;
+    }
+
+    closedir(dir);
+    return files_read;
 }

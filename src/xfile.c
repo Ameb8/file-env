@@ -141,7 +141,12 @@ void handleExit() {
 
 
 int main() {
-    int choice;
+    int choice; // Stores user selection
+    int files_loaded = libFSLoad(); // Load file(s) from previous sessions
+
+    // Display intro messages
+    printf("\n\nWelcome to xfile file-editor and file-system simulator!");
+    printf("\n%d files have been loaded from previous sessions", files_loaded);
 
     while(1) {
         displayMenu();
