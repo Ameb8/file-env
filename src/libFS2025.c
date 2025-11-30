@@ -27,6 +27,8 @@
 // Success messages when output succeeds
 #define SCS_MSG_FW "Data written to file '%s' successfully.\n"
 
+// Macro to check if file descriptor points to valid file
+#define FD_VALID(fd) (fd >= 0 && fd < file_end && file_table[fd].exists)
 
 // Global variables to track state
 FileEntry file_table[MAX_FILES] = {0}; // File table to track files where index serves as virtual file descriptor
@@ -35,25 +37,30 @@ int file_end = 0; // Tracks highest used virtual descriptor for file storage
 Queue free_mem = { NULL, 0 }; // Holds open indices in table less than file count
 
 
-static void buildFullPath(char *out, const char *filename) {
+// Constructs full filepath from filename
+// Path relative from project root directory
+// Result assigned to out argument
+static void buildFullPath(char* out, const char* filename) {
     snprintf(out, MAX_FILENAME + 20, "%s%s", LIBFS_BASE_DIR, filename);
 }
 
 
 // Returns index of file if in memory
 int findFile(const char* filename) {
-    for (int i = 0; i < file_count; i++) {
+    for (int i = 0; i < file_count; i++) { // Check all virtual memory addresses
         if(file_table[i].exists && strcmp(file_table[i].filename, filename) == 0)
-            return i;
+            return i; // File found
     }
 
-    return LIBFS_ERR;
+    return LIBFS_ERR; // File not found
 }
 
 
 // Create a new file
 int fileCreate(const char *filename) {
+    // Check name for uniqueness
     if(findFile(filename) != LIBFS_ERR) {
+        // Name already exists
         printf(ERR_MSG_FAE, filename);
         return LIBFS_ERR;
     }
@@ -71,24 +78,32 @@ int fileCreate(const char *filename) {
 
     // Create the file on the local disk
     FILE *file = fopen(fullpath, "w");
-    if (!file) {
+
+    if(!file) { // Failure opening file
         printf(ERR_MSG_CNC, filename);
-        return -1;
+        return LIBFS_ERR;
     }
-    fclose(file);
+
+    fclose(file); // Close file on host system
 
     // Add file to the file table
-    strcpy(file_table[mem_idx].filename, filename);
-    file_table[mem_idx].size = 0;
-    file_table[mem_idx].is_open = 0;  // File defaults as closed
-    file_table[mem_idx].exists = 1;
+    strcpy(file_table[mem_idx].filename, filename); // Copy filename
+    file_table[mem_idx].size = 0; // Set file as empty
+    file_table[mem_idx].is_open = 0; // File defaults to closed
+    file_table[mem_idx].exists = 1; // FileEntry is valid file 
     file_count++;
 
+    // File created successfully
     printf("File '%s' created successfully.\n", filename);
+
     return 0;
 }
 
-// Open a file
+
+// Open a file in virtual file system
+// Does not open file on host system
+// fails if file is already open or does not exist
+// Returns file descriptor on success
 int fileOpen(const char *filename) {
     int open_idx = findFile(filename); // Get file mem location
 
@@ -111,9 +126,12 @@ int fileOpen(const char *filename) {
 
 
 // Write data to a file
+// Overwrites existing data
+// Fails if file closed or index invalid
+// Returns number of bytes written
 int fileWrite(int file_index, const char *data) {
     // Ensure file index is valid
-    if(!file_table[file_index].exists) {
+    if(!FD_VALID(file_index)) {
         printf(ERR_MSG_IDXNE, file_index);
         return LIBFS_ERR;
     }
@@ -144,12 +162,13 @@ int fileWrite(int file_index, const char *data) {
     file_table[file_index].size = data_size; // Update file size metadata
     printf(SCS_MSG_FW, file_table[file_index].filename); 
 
-    return 0;
+    return data_size;
 }
 
 // Read data from a file
+// Fails if file not open or index invalid
 int fileRead(int file_index, char *buffer, int buffer_size) {
-    if(!file_table[file_index].is_open) { // Check that file is open in LIBFS
+    if(!FD_VALID(file_index) || !file_table[file_index].is_open) { // Check that file is open in LIBFS
         printf("Error: File '%s' is not open.\n", file_table[file_index].filename);
         return LIBFS_ERR;
     }
@@ -194,7 +213,7 @@ int fileRead(int file_index, char *buffer, int buffer_size) {
 // Close a file
 int fileClose(int file_index) {
     // Ensure file index is valid
-    if(!file_table[file_index].exists) {
+    if(!FD_VALID(file_index)) {
         printf(ERR_MSG_IDXNE, file_index);
         return LIBFS_ERR;
     }

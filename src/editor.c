@@ -197,7 +197,6 @@ void process_key(int k) {
         
         case '\r': {  // Enter key for newline
             char *line = lines[cy];
-            int len = strlen(line);
 
             // Split current line into left + right parts
             char *left = strndup(line, cx);
