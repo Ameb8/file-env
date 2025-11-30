@@ -11,6 +11,7 @@
 
 #define MAX_LINES 5000
 
+
 // Data to track editor state
 char* filename = NULL; // Name of open file
 char exit_editor; // Set when graceful exit requested
