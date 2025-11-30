@@ -2,9 +2,9 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include "../include/queue.h"
+#include "../include/Alex_queue.h"
 
-#include "libFS2025.h"
+#include "../include/Alex_libFS2025.h"
 
 
 // File store directory config

@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../include/queue.h"
+#include "../include/Alex_queue.h"
 
-#include "../include/libFS2025.h"
+#include "../include/Alex_libFS2025.h"
 
 
 #define MAX_LINES 5000

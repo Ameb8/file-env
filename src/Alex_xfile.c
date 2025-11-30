@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "../include/libFS2025.h"
-#include "../include/editor.h"
+#include "../include/Alex_libFS2025.h"
+#include "../include/Alex_editor.h"
 
 
 #define INPUT_BUF_SIZE 64
