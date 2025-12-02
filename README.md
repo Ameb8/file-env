@@ -9,4 +9,4 @@ File Env is a file management simulator, written to learn about how operating sy
 
 <video controls src="https://ameb8.github.io/file-env/demo/file-env-demo.mp4" title="Title"></video>
 
-If the video does not display above, [click here] (https://username.github.io/repo-name/demo/video.mp4)
+If the video does not display above, [click here] (https://Ameb8.github.io/file-env/demo/file-env-demo.mp4)
